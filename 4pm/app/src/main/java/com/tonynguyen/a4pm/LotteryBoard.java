@@ -7,6 +7,7 @@ import androidx.appcompat.widget.AppCompatButton;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.Gravity;
+import android.view.View;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
@@ -20,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class LotteryBoard extends AppCompatActivity {
-    TextView dateView, dayView;
+    TextView dateView, notificationView;
     List<LotteryOffice> lotteryOfficeList;
     TableLayout tableLayout;
     String day;
@@ -33,6 +34,7 @@ public class LotteryBoard extends AppCompatActivity {
         setContentView(R.layout.activity_lottery_board);
         dateView = findViewById(R.id.date);
         tableLayout = findViewById(R.id.board);
+        notificationView = findViewById(R.id.notificationView);
         getDataOfDoc(getDoc());
         drawBoard();
         AppCompatButton button = findViewById(R.id.btnBack);
@@ -44,11 +46,13 @@ public class LotteryBoard extends AppCompatActivity {
         String date = document.select("h1.pagetitle").first().text();
         dateView.setText(date);
         //setDay
-        day = document.select("td.thu").first().text();
+        Element element = document.select("td.thu").first();
+        day= element==null ? "":element.text();
         lotteryOfficeList = getProvinces(document);
     }
 
     private void drawBoard() {
+        if(lotteryOfficeList.isEmpty()) return;
         //Header
         drawHeader();
         //EighthPrize
@@ -280,11 +284,25 @@ public class LotteryBoard extends AppCompatActivity {
         }
     }
 
+    private void showNotification(boolean isShow){
+        if(isShow){
+            tableLayout.setVisibility(View.INVISIBLE);
+            notificationView.setVisibility(View.VISIBLE);
+        }
+        else{
+            tableLayout.setVisibility(View.VISIBLE);
+            notificationView.setVisibility(View.INVISIBLE);
+        }
+    }
+
     private List<LotteryOffice> getProvinces(Document document) {
         List<LotteryOffice> provinces = new ArrayList<LotteryOffice>();
         if (document == null) return provinces;
         Element element = document.select("div.kqxs_content").first();
-        assert element != null;
+        if(element==null){
+            showNotification(true);
+            return provinces;
+        }
         Elements elements = element.select("table.tblKQTinh");
         for (Element province : elements) {
             String provinceName = province.select("td.tentinh span.namelong").text().trim();
@@ -322,15 +340,6 @@ public class LotteryBoard extends AppCompatActivity {
         date += "/";
         date += year;
         return date;
-    }
-
-    @Override
-    public void onBackPressed() {
-        // Tạo một Intent để khởi chạy MainActivity
-        Intent intent = new Intent(this, MainActivity.class);
-        // Đặt các flags để tạo mới hoàn toàn MainActivity và xóa tất cả các hoạt động trước đó khỏi ngăn xếp hoạt động
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
     }
 
 }

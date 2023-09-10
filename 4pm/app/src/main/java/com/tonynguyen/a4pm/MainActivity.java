@@ -19,12 +19,13 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements Serializable {
     Document doc;
     CalendarView calendarView;
     ProgressBar progressBar;
@@ -42,8 +43,13 @@ public class MainActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progress);
         // Lấy ngày hiện tại
         Calendar currentDate = Calendar.getInstance();
+        Calendar minDate = Calendar.getInstance();
+        //Date tư hien tai tro ve truoc 30 ngay
+        minDate.add(Calendar.DATE, -30);
         // Đặt ngày tối thiểu cho CalendarView là ngày hiện tại
         calendarView.setMaxDate(currentDate.getTimeInMillis());
+        calendarView.setMinDate(minDate.getTimeInMillis());
+        calendarView.setFirstDayOfWeek(Calendar.MONDAY);
         calendarView.setOnDateChangeListener((view, year, month, dayOfMonth) -> {
             connectWeb(setUrl(dayOfMonth, month+1, year));
         }
@@ -70,40 +76,13 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(MainActivity.this, "Không truy cập được trang web", Toast.LENGTH_SHORT).show();
         }
     }
-    private List<LotteryOffice> getLotteryBoards(Document document){
-        List<LotteryOffice> provinces = new ArrayList<LotteryOffice>();
-        if(document==null) return provinces;
-        Element element = document.select("div.kqxs_content").first();
-        assert element != null;
-        Elements elements = element.select("table.tblKQTinh");
-        for (Element province : elements) {
-            String provinceName = province.select("td.tentinh span.namelong").text().trim();
-            Elements prizes = province.select("tr td");
-            LotteryResults lotteryResults = new LotteryResults();
-            lotteryResults.setEighthPrize(prizes.select(".giai_tam .dayso").text());
-            lotteryResults.setSeventhPrize(prizes.select(".giai_bay .dayso").text());
-            Elements sixthPrize = prizes.select(".giai_sau div.dayso");
-            for(Element e : sixthPrize){
-                lotteryResults.getSixthPrize().add(e.text());
-            }
-            lotteryResults.setFifthPrize(prizes.select(".giai_nam .dayso").text());
-            Elements fourthPrize = prizes.select(".giai_tu div.dayso");
-            for(Element e : fourthPrize){
-                lotteryResults.getFourthPrize().add(e.text());
-            }
-            Elements thirdPrize = prizes.select(".giai_ba div.dayso");
-            for(Element e : thirdPrize){
-                lotteryResults.getThirdPrize().add(e.text());
-            }
-            lotteryResults.setSecondPrize(prizes.select(".giai_nhi .dayso").text());
-            lotteryResults.setFirstPrize(prizes.select(".giai_nhat .dayso").text());
-            lotteryResults.setSpecialPrize(prizes.select(".giai_dac_biet .dayso").text());
-            LotteryOffice lotteryOffice = new LotteryOffice(provinceName, lotteryResults);
-            provinces.add(lotteryOffice);
-        }
-        return provinces;
+    @Override
+    protected void onResume() {
+        super.onResume();
+        isLoading(false);
     }
-    private void isLoading(boolean progress){
+
+    public void isLoading(boolean progress){
         if(progress){
             progressBar.setVisibility(View.VISIBLE);
             calendarView.setVisibility(View.INVISIBLE);
